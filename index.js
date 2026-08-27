@@ -1,354 +1,768 @@
-// const express = require('express');
-// const dotenv = require("dotenv");
-
-
-
-// const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
-// const cors = require("cors");
-// const { createRemoteJWKSet } = require('jose-cjs');
-// dotenv.config();
-// const app = express();
-// app.use(cors())
-// const port = process.env.PORT || 8080;
-
-// // username= mentora
-
-// const uri = process.env.MONGODB_URI;
-
-//   const JWKS = createRemoteJWKSet(
-//      new URL(`${process.env.CLIENT_URL}/api/auth/jwks`)
-//     )
-
-
-  
- 
-// console.log(process.env.CLIENT_URL);
-
-// // Create a MongoClient with a MongoClientOptions object to set the Stable API version
-// const client = new MongoClient(uri, {
-//   serverApi: {
-//     version: ServerApiVersion.v1,
-//     strict: true,
-//     deprecationErrors: true,
-//   }
-// });
-
-
-
-// const logger =  (req, res, next) => {
-//           console.log(`${req.method} | ${req.url}`);
-//           next();
-//         };
-
-//         const verifyToken = async (req, res, next) => {
-//           const { authorization } = req.headers;
-//           const token = authorization?.split(" ")[1];
-//           // console.log(token);
-
-
-//        if (!token) {
-//           return res.status(401).json({ message: "Unauthorized" });
-//        }  
-
-
-//         try {
-//     const JWKS = createRemoteJWKSet(
-//       new URL('http://localhost:3000/api/auth/jwks')
-//     )
-//     const { payload } = await jwtVerify(token, JWKS,)
-     
-//     req.user = payload;
-//     console.log(req.user);
-
-//      next();
-    
-//   } catch (error) {
-//     console.error('Token validation failed:', error)
-//     throw error;
-//      return res.status(401).json({ message: "Unauthorized" });
-//   }
-       
-           
-// }
 
 
 
 
-       
-      
-
-// async function run() {
-//   try {
-//     // Connect the client to the server	(optional starting in v4.7)
-//     await client.connect();
-//     // Send a ping to confirm a successful connection
-//     // await client.db("admin").command({ ping: 1 });
-
-//       // const db = client.db("mentoradb");
-//       // const coursesCollection = db.collection("Tutor");
-//       // const coursesCollection = db.collection("Tutor");
-   
-//       // app.get("/courses",async(req, res) => {
-//       //   const cursor = coursesCollection.find();
-//       //   const result = await cursor.toArray();
-//       //   console.log(result);
-
-//       // })
-
-//     const db = client.db("mentoradb");
-// const coursesCollection = db.collection("courses");
-// const  enrollmentCollection = db.collection("enrollments");
-
-// app.get("/courses", async (req, res) => {
-//    const {search} = req.query;
-
-//    let cursor;
-//     if(search){
-//       cursor = coursesCollection.find({ title: search });
-//     } else {
-//       cursor = coursesCollection.find();
-//     }
-  
-  
-//   const result = await cursor.toArray();
-//   console.log(result);
-  
-//   res.send(result);
-  
-
-// });
-
-//       app.get("/featured", async(req, res) => {
-       
-//          const cursor = coursesCollection.find().limit(6);
-//          const result = await cursor.toArray();
-        
-//          res.send(result);
-
-//       })
-  
-
-//       app.get("/tutors/:courseId", 
-//         logger,
-//         verifyToken,
-//         async (req, res) => {
-//          const { courseId } = req.params;
-//         //  console.log(req.params);
-         
-//           const query = {_id: new ObjectId(courseId)}
-//           const result = await coursesCollection.findOne(query);
-//           res.send(result)
-//         });
-
-//         app.patch("/enrollments/:courseId", verifyToken, async(req, res) => {
-//           const { courseId } = req.params;
-//           const enrollmentData = req.body;
-
-//           const tutors = await coursesCollection.findOne({_id: new ObjectId(courseId)});
-//           if(!tutors){
-//              res.status(404).json({ message: "Course not found" }); 
-//           }
-
-//           await coursesCollection.updateOne({_id: new ObjectId(courseId)}, {
-//               $inc: { enrolledStudents: 1 },
-//               $set: {
-//                 lastEnrolledAt: new Date(),
-//               }
-//           })
-
-//           const result = await enrollmentCollection.insertOne({
-//           ...enrollmentData,
-//           enrolledAt: new Date(),
-//         }); 
-//           res.send(result);
-
-//         })
-
-       
-
-
-//     console.log("Pinged your deployment. You successfully connected to MongoDB!");
-//   } finally {
-//     // Ensures that the client will close when you finish/error
-//     // await client.close();
-//   }
-// }
-// run().catch(console.dir);
-
-
-
-
-
-
-
-// app.get('/', (req, res) => {
-//   res.send('Hello World!')
-// })
-
-// app.listen(port, () => {
-//   console.log(`Example app listening on port ${port}`)
-// })
-
-
-
-
-// // eyJhbGciOiJFZERTQSIsImtpZCI6IjZhMGUwYTkwNWYwNzg5ZDg2ZGQ1NjJjNyJ9.eyJpYXQiOjE3Nzk4MTc2OTcsIm5hbWUiOiJyaW1vbiIsImVtYWlsIjoiZW1vbnZAZ21haWwuY29tIiwiZW1haWxWZXJpZmllZCI6ZmFsc2UsImltYWdlIjoiaHR0cHM6Ly9waXhhYmF5LmNvbS9waG90b3MvZmxvd2VyLWhhcHB5LWVhc3Rlci1tYXJndWVyaXRlLTcyOTUxMC8iLCJjcmVhdGVkQXQiOiIyMDI2LTA1LTIwVDA5OjIwOjAyLjMxMFoiLCJ1cGRhdGVkQXQiOiIyMDI2LTA1LTIwVDA5OjIwOjAyLjMxMFoiLCJpZCI6IjZhMGQ3Y2MyYzBiZDI0NDg1NTA0Y2YyNCIsInN1YiI6IjZhMGQ3Y2MyYzBiZDI0NDg1NTA0Y2YyNCIsImV4cCI6MTc3OTgxODU5NywiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDozMDAwIiwiYXVkIjoiaHR0cDovL2xvY2FsaG9zdDozMDAwIn0.WKXsSlKGuo_nO3sUa-PrI-eGY0GuGf5wO3B1gAUw4ovBt0Lsd7SGrvkkrYA7Yw881DR-pG3OIwZOK4FDQUktAg
-
-
-
-
-const express = require('express');
+const express = require("express");
 const dotenv = require("dotenv");
-const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const cors = require("cors");
 
-// FIXED: Added jwtVerify to the imports from jose-cjs
-const { createRemoteJWKSet, jwtVerify } = require('jose-cjs');
-
 dotenv.config();
+
 const app = express();
-app.use(cors());
-app.use(express.json()); // Added middleware to parse JSON request bodies (needed for POST/PATCH)
+
+// =====================================================
+// MIDDLEWARE (CORS & Credentials Setup)
+// =====================================================
+
+const clientUrl = process.env.CLIENT_URL || "http://localhost:3000";
+
+app.use( 
+  cors({
+    origin: [clientUrl, "http://localhost:3000"],
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
+  })
+);
+
+app.use(express.json());
+
+// =====================================================
+// ENV & CONFIG
+// =====================================================
 
 const port = process.env.PORT || 8080;
 const uri = process.env.MONGODB_URI;
+const BETTER_AUTH_URL = process.env.BETTER_AUTH_URL || "http://localhost:3000";
 
-const JWKS = createRemoteJWKSet(
-  new URL(`${process.env.CLIENT_URL}/api/auth/jwks`)
-);
+if (!uri) {
+  console.error("❌ MONGODB_URI is not defined!");
+  process.exit(1);
+}
 
-console.log(process.env.CLIENT_URL);
+// =====================================================
+// MONGODB CLIENT
+// =====================================================
 
-// Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
     strict: true,
     deprecationErrors: true,
-  }
+  },
 });
 
-// Logger Middleware
+// =====================================================
+// LOGGER
+// =====================================================
+
 const logger = (req, res, next) => {
   console.log(`${req.method} | ${req.url}`);
   next();
 };
 
-// Token Verification Middleware
+app.use(logger);
+
+// =====================================================
+// BETTER AUTH SESSION VERIFICATION
+// =====================================================
+
 const verifyToken = async (req, res, next) => {
-  const { authorization } = req.headers;
-  const token = authorization?.split(" ")[1];
-
-  if (!token) {
-    return res.status(401).json({ message: "Unauthorized: No token provided" });
-  }
-
   try {
-    const JWKS = createRemoteJWKSet(
-      new URL('http://localhost:3000/api/auth/jwks')
-    );
-    
-    // This will now work perfectly since jwtVerify is imported above
-    const { payload } = await jwtVerify(token, JWKS);
-    
-    req.user = payload;
-    console.log(req.user);
+    const rawCookie = req.headers.cookie || "";
+    const authorization = req.headers.authorization || "";
+
+    const bearerToken = authorization.startsWith("Bearer ")
+      ? authorization.split(" ")[1]
+      : null;
+
+    if (!rawCookie && (!bearerToken || bearerToken === "undefined" || bearerToken === "null")) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized: Session expired or invalid",
+      });
+    }
+
+    const headersToForward = {
+      ...(rawCookie ? { cookie: rawCookie } : {}),
+      ...(authorization ? { authorization: authorization } : {}),
+    };
+
+    if (!rawCookie && bearerToken) {
+      headersToForward["cookie"] = `better-auth.session_token=${bearerToken}`;
+    }
+
+    const authRes = await fetch(`${BETTER_AUTH_URL}/api/auth/get-session`, {
+      method: "GET",
+      headers: headersToForward,
+    });
+
+    if (!authRes.ok) {
+      console.error(`❌ Better Auth responded with status: ${authRes.status}`);
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized: Session expired or invalid",
+      });
+    }
+
+    const sessionData = await authRes.json();
+    const user = sessionData?.user || sessionData?.data?.user;
+
+    if (!sessionData || !user) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized: Session expired or invalid",
+      });
+    }
+
+    req.user = {
+      id: user.id || user._id,
+      sub: user.id || user._id,
+      email: user.email,
+      name: user.name,
+      role: user.role || "user",
+    };
+
     next();
-    
   } catch (error) {
-    console.error('Token validation failed:', error.message);
-    // FIXED: Removed "throw error" so it gracefully responds instead of crashing the server
-    return res.status(401).json({ message: "Unauthorized", error: error.message });
+    console.error("❌ Better Auth verification failed:", error.message);
+    return res.status(401).json({
+      success: false,
+      message: "Unauthorized: Session expired or invalid",
+    });
   }
 };
+
+// =====================================================
+// ROUTES & DATABASE SETUP
+// =====================================================
 
 async function run() {
   try {
     await client.connect();
-    
+    console.log("✅ Successfully connected to MongoDB!");
+
     const db = client.db("mentoradb");
     const coursesCollection = db.collection("courses");
-    const enrollmentCollection = db.collection("enrollments");
+    const bookingsCollection = db.collection("bookings");
 
-    // Get all courses or search courses
-    app.get("/courses", async (req, res) => {
-      const { search } = req.query;
-      let cursor;
-      
-      if (search) {
-        cursor = coursesCollection.find({ title: search });
-      } else {
-        cursor = coursesCollection.find();
-      }
-
-      const result = await cursor.toArray();
-      res.send(result);
+    app.get("/", (req, res) => {
+      res.send("🚀 MentorA Server Running Successfully!");
     });
 
-    // Get featured courses
-    app.get("/featured", async (req, res) => {
-      const cursor = coursesCollection.find().limit(6);
-      const result = await cursor.toArray();
-      res.send(result);
-    });
+    // -------------------------------------------------
+    // ADD TUTOR
+    // -------------------------------------------------
+    app.post("/tutors", verifyToken, async (req, res) => {
+      try {
+        const {
+          tutorName,
+          photoURL,
+          subjectCategory,
+          availableDaysAndTime,
+          hourlyFee,
+          totalSlot,
+          sessionStartDate,
+          institution,
+          experience,
+          location,
+          teachingMode,
+        } = req.body;
 
-    // Get single tutor/course details (Protected Route)
-    app.get("/tutors/:courseId", 
-      logger,
-      verifyToken,
-      async (req, res) => {
-        const { courseId } = req.params;
-        const query = { _id: new ObjectId(courseId) };
-        const result = await coursesCollection.findOne(query);
-        res.send(result);
-      }
-    );
-
-    app.get("/enrollments/:userId", verifyToken, async (req, res) => {
-      const { userId } = req.params;
-      const result = await enrollmentCollection.find({ userId }).toArray();
-      res.send(result);
-
-    })
-
-    // Enroll into a course (Protected Route)
-    app.patch("/enrollments/:courseId", verifyToken, async (req, res) => {
-      const { courseId } = req.params;
-      const enrollmentData = req.body;
-
-      const tutors = await coursesCollection.findOne({ _id: new ObjectId(courseId) });
-      if (!tutors) {
-        return res.status(404).json({ message: "Course not found" });
-      }
-
-      await coursesCollection.updateOne(
-        { _id: new ObjectId(courseId) }, 
-        {
-          $inc: { enrolledStudents: 1 },
-          $set: { lastEnrolledAt: new Date() }
+        if (
+          !tutorName ||
+          !photoURL ||
+          !subjectCategory ||
+          !availableDaysAndTime ||
+          hourlyFee === undefined ||
+          totalSlot === undefined ||
+          !sessionStartDate
+        ) {
+          return res.status(400).json({
+            success: false,
+            message: "All required fields must be provided",
+          });
         }
-      );
 
-      const result = await enrollmentCollection.insertOne({
-        ...enrollmentData,
-        enrolledAt: new Date(),
-      });
-      
-      res.send(result);
+        const userId = req.user?.sub || req.user?.id || req.user?.email;
+
+        const tutorDocument = {
+          type: "tutor",
+          tutorName: tutorName.trim(),
+          photoURL: photoURL.trim(),
+          subjectCategory: subjectCategory.trim(),
+          availableDaysAndTime: availableDaysAndTime.trim(),
+          hourlyFee: Number(hourlyFee),
+          totalSlot: Number(totalSlot),
+          sessionStartDate,
+          institution: institution?.trim() || "",
+          experience: experience?.trim() || "",
+          location: location?.trim() || "",
+          teachingMode: teachingMode || "Online",
+          userId,
+          createdAt: new Date(),
+        };
+
+        const result = await coursesCollection.insertOne(tutorDocument);
+
+        return res.status(201).json({
+          success: true,
+          message: "Tutor added successfully!",
+          insertedId: result.insertedId,
+          tutor: { ...tutorDocument, _id: result.insertedId },
+        });
+      } catch (error) {
+        console.error("❌ Add tutor error:", error);
+        return res
+          .status(500)
+          .json({ success: false, message: "Failed to add tutor" });
+      }
     });
 
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
-  } finally {
-    // Ensures that the client will close when you finish/error
-    // await client.close();
+    // -------------------------------------------------
+    // GET ALL TUTORS
+    // -------------------------------------------------
+    // app.get("/tutors", async (req, res) => {
+    //   try {
+    //     const tutors = await coursesCollection
+    //       .find({ type: "tutor" })
+    //       .sort({ createdAt: -1 })
+    //       .toArray();
+
+    //     return res.status(200).json(tutors);
+    //   } catch (error) {
+    //     console.error("❌ Get tutors error:", error);
+    //     return res
+    //       .status(500)
+    //       .json({ success: false, message: "Failed to fetch tutors" });
+    //   }
+    // });
+
+     app.get("/tutors", async (req, res) => {
+  try {
+    const { searchTerm, startDate, endDate } = req.query;
+
+    const query = { type: "tutor" };
+
+    // ১. নাম, বিষয় বা লোকেশন দিয়ে সার্চ (Search with OR operator)
+    if (searchTerm && searchTerm.trim() !== "") {
+      const searchRegex = { $regex: searchTerm.trim(), $options: "i" };
+      query.$or = [
+        { tutorName: searchRegex },
+        { subjectCategory: searchRegex },
+        { location: searchRegex },
+      ];
+    }
+
+    // ২. তারিখ দিয়ে ফিল্টারিং (sessionStartDate অনুযায়ী)
+    if (startDate || endDate) {
+      query.sessionStartDate = {};
+      if (startDate) query.sessionStartDate.$gte = startDate;
+      if (endDate) query.sessionStartDate.$lte = endDate;
+    }
+
+    const tutors = await coursesCollection
+      .find(query)
+      .sort({ createdAt: -1 })
+      .toArray();
+
+    return res.status(200).json(tutors);
+  } catch (error) {
+    console.error("❌ Get tutors error:", error);
+    return res.status(500).json({ success: false, message: "Failed to fetch tutors" });
+  }
+});
+
+    // -------------------------------------------------
+    // GET MY TUTORS
+    // -------------------------------------------------
+    app.get("/my-tutors", verifyToken, async (req, res) => {
+      try {
+        const userId = req.user?.sub || req.user?.id || req.user?.email;
+
+        const tutors = await coursesCollection
+          .find({ type: "tutor", userId })
+          .sort({ createdAt: -1 })
+          .toArray();
+
+        return res.status(200).json({ success: true, tutors });
+      } catch (error) {
+        console.error("❌ Get my tutors error:", error);
+        return res
+          .status(500)
+          .json({ success: false, message: "Failed to fetch your tutors" });
+      }
+    });
+
+    // -------------------------------------------------
+    // GET SINGLE TUTOR
+    // -------------------------------------------------
+    app.get("/tutors/:id", async (req, res) => {
+      try {
+        const { id } = req.params;
+
+        if (!ObjectId.isValid(id)) {
+          return res
+            .status(400)
+            .json({ success: false, message: "Invalid tutor ID" });
+        }
+
+        const tutor = await coursesCollection.findOne({
+          _id: new ObjectId(id),
+          type: "tutor",
+        });
+
+        if (!tutor) {
+          return res
+            .status(404)
+            .json({ success: false, message: "Tutor not found" });
+        }
+
+        return res.status(200).json(tutor);
+      } catch (error) {
+        console.error("❌ Get tutor error:", error);
+        return res
+          .status(500)
+          .json({ success: false, message: "Failed to fetch tutor" });
+      }
+    });
+
+    // -------------------------------------------------
+    // UPDATE TUTOR
+    // -------------------------------------------------
+    app.put("/tutors/:id", verifyToken, async (req, res) => {
+      try {
+        const { id } = req.params;
+
+        if (!ObjectId.isValid(id)) {
+          return res
+            .status(400)
+            .json({ success: false, message: "Invalid tutor ID" });
+        }
+
+        const userId = req.user?.sub || req.user?.id || req.user?.email;
+
+        const {
+          tutorName,
+          photoURL,
+          subjectCategory,
+          availableDaysAndTime,
+          hourlyFee,
+          totalSlot,
+          sessionStartDate,
+          institution,
+          location,
+          teachingMode,
+          experience,
+        } = req.body;
+
+        if (
+          !tutorName ||
+          !photoURL ||
+          !subjectCategory ||
+          !availableDaysAndTime ||
+          hourlyFee === undefined ||
+          totalSlot === undefined ||
+          !sessionStartDate
+        ) {
+          return res.status(400).json({
+            success: false,
+            message: "All required fields must be provided",
+          });
+        }
+
+        const updatedTutor = {
+          tutorName: tutorName.trim(),
+          photoURL: photoURL.trim(),
+          subjectCategory: subjectCategory.trim(),
+          availableDaysAndTime: availableDaysAndTime.trim(),
+          hourlyFee: Number(hourlyFee),
+          totalSlot: Number(totalSlot),
+          sessionStartDate,
+          institution: institution?.trim() || "",
+          location: location?.trim() || "",
+          teachingMode: teachingMode || "Online",
+          experience: experience?.trim() || "",
+          updatedAt: new Date(),
+        };
+
+        const result = await coursesCollection.updateOne(
+          { _id: new ObjectId(id), type: "tutor", userId },
+          { $set: updatedTutor }
+        );
+
+        if (result.matchedCount === 0) {
+          return res.status(404).json({
+            success: false,
+            message: "Tutor not found or not authorized to edit",
+          });
+        }
+
+        const updatedDocument = await coursesCollection.findOne({
+          _id: new ObjectId(id),
+        });
+
+        return res.status(200).json({
+          success: true,
+          message: "Tutor updated successfully!",
+          tutor: updatedDocument,
+        });
+      } catch (error) {
+        console.error("❌ Update tutor error:", error);
+        return res.status(500).json({
+          success: false,
+          message: "Failed to update tutor",
+          error: error.message,
+        });
+      }
+    });
+
+    // -------------------------------------------------
+    // DELETE TUTOR
+    // -------------------------------------------------
+   
+
+    // =====================================================
+// DELETE TUTOR (Updated & Debugged)
+// =====================================================
+  
+
+// =====================================================
+// DELETE TUTOR (Fixed Ownership & Type Matching)
+// =====================================================
+//   app.delete("/tutors/:id", verifyToken, async (req, res) => {
+//   try {
+//     console.log("========== DELETE TUTOR ==========");
+//     console.log("REQ.USER:", req.user);
+//     console.log("TUTOR ID:", req.params.id);
+
+//     const { id } = req.params;
+
+//     if (!ObjectId.isValid(id)) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Invalid tutor ID format",
+//       });
+//     }
+
+//     const tutor = await coursesCollection.findOne({
+//       _id: new ObjectId(id),
+//     });
+
+//     console.log("TUTOR FROM DB:", tutor);
+
+//     if (!tutor) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "Tutor not found",
+//       });
+//     }
+
+//     const currentUserId = req.user?.id || req.user?.sub;
+//     const currentUserEmail = req.user?.email;
+
+//     console.log("CURRENT USER ID:", currentUserId);
+//     console.log("CURRENT USER EMAIL:", currentUserEmail);
+//     console.log("TUTOR USER ID:", tutor.userId);
+
+//     const isOwner =
+//       tutor.userId?.toString() === currentUserId?.toString() ||
+//       tutor.userId?.toString() === currentUserEmail?.toString();
+
+//     console.log("IS OWNER:", isOwner);
+
+//     if (!isOwner) {
+//       return res.status(403).json({
+//         success: false,
+//         message: "Forbidden: You are not authorized to delete this tutor",
+//       });
+//     }
+
+//     const result = await coursesCollection.deleteOne({
+//       _id: new ObjectId(id),
+//     });
+
+//     console.log("DELETE RESULT:", result);
+
+//     if (result.deletedCount === 1) {
+//       return res.status(200).json({
+//         success: true,
+//         message: "Tutor deleted successfully!",
+//       });
+//     }
+
+//     return res.status(400).json({
+//       success: false,
+//       message: "Could not delete tutor",
+//     });
+//   } catch (error) {
+//     console.error("DELETE TUTOR ERROR:", error);
+
+//     return res.status(500).json({
+//       success: false,
+//       message: "Server error while deleting tutor",
+//     });
+//   }
+// });
+
+
+app.delete("/tutors/:id", verifyToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    console.log("========== DELETE TUTOR ==========");
+    console.log("Tutor ID:", id);
+    console.log("Logged User:", req.user);
+
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid tutor ID",
+      });
+    }
+
+    const userId = req.user.id;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "User ID not found",
+      });
+    }
+
+    const tutor = await coursesCollection.findOne({
+      _id: new ObjectId(id),
+      type: "tutor",
+    });
+
+    console.log("Tutor:", tutor);
+
+    if (!tutor) {
+      return res.status(404).json({
+        success: false,
+        message: "Tutor not found",
+      });
+    }
+
+    console.log("Tutor owner:", tutor.userId);
+    console.log("Current user:", userId);
+
+    if (String(tutor.userId) !== String(userId)) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to delete this tutor",
+      });
+    }
+
+    const result = await coursesCollection.deleteOne({
+      _id: new ObjectId(id),
+      userId: userId,
+      type: "tutor",
+    });
+
+    console.log("Delete result:", result);
+
+    if (result.deletedCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Tutor not found or already deleted",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Tutor deleted successfully!",
+    });
+
+  } catch (error) {
+    console.error("❌ DELETE TUTOR ERROR:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Server error while deleting tutor",
+    });
+  }
+});
+
+    // -------------------------------------------------
+    // CREATE BOOKING
+    // -------------------------------------------------
+    app.post("/api/bookings", verifyToken, async (req, res) => {
+      try {
+        const { tutorId, studentEmail, studentName, phone } = req.body;
+
+        if (!tutorId || !ObjectId.isValid(tutorId)) {
+          return res
+            .status(400)
+            .json({ success: false, message: "Valid Tutor ID is required" });
+        }
+
+        const userId = req.user?.sub || req.user?.id || req.user?.email;
+
+        const tutor = await coursesCollection.findOne({
+          _id: new ObjectId(tutorId),
+          type: "tutor",
+        });
+
+        if (!tutor) {
+          return res
+            .status(404)
+            .json({ success: false, message: "Tutor not found" });
+        }
+
+        if (tutor.totalSlot === undefined || tutor.totalSlot <= 0) {
+          return res
+            .status(400)
+            .json({ success: false, message: "No available slots left." });
+        }
+
+        const existingBooking = await bookingsCollection.findOne({
+          tutorId: new ObjectId(tutorId),
+          userId,
+          bookStatus: { $ne: "Cancelled" },
+        });
+
+        if (existingBooking) {
+          return res.status(400).json({
+            success: false,
+            message: "You have already booked this tutor",
+          });
+        }
+
+        const slotUpdate = await coursesCollection.updateOne(
+          { _id: new ObjectId(tutorId), totalSlot: { $gt: 0 } },
+          { $inc: { totalSlot: -1 } }
+        );
+
+        if (slotUpdate.modifiedCount !== 1) {
+          return res.status(400).json({
+            success: false,
+            message: "Failed to reduce slot or no slots left.",
+          });
+        }
+
+        const bookingDoc = {
+          userId,
+          tutorId: new ObjectId(tutorId),
+          tutorName: tutor.tutorName || "",
+          studentName: studentName?.trim() || "",
+          studentEmail: studentEmail?.trim() || "",
+          phone: phone?.trim() || "",
+          subjectCategory: tutor.subjectCategory || "",
+          bookStatus: "Pending",
+          createdAt: new Date(),
+        };
+
+        try {
+          const result = await bookingsCollection.insertOne(bookingDoc);
+          return res.status(201).json({
+            success: true,
+            message: "Booking confirmed successfully! 🎉",
+            bookingId: result.insertedId,
+          });
+        } catch (insertError) {
+          await coursesCollection.updateOne(
+            { _id: new ObjectId(tutorId) },
+            { $inc: { totalSlot: 1 } }
+          );
+          throw insertError;
+        }
+      } catch (error) {
+        console.error("❌ Booking error:", error);
+        return res
+          .status(500)
+          .json({ success: false, message: "Server error" });
+      }
+    });
+
+    // -------------------------------------------------
+    // GET MY BOOKINGS
+    // -------------------------------------------------
+    app.get("/api/bookings/my-bookings", verifyToken, async (req, res) => {
+      try {
+        const userId = req.user?.sub || req.user?.id || req.user?.email;
+
+        const bookings = await bookingsCollection
+          .find({ userId })
+          .sort({ createdAt: -1 })
+          .toArray();
+
+        return res.status(200).json({ success: true, bookings });
+      } catch (error) {
+        console.error("❌ Get bookings error:", error);
+        return res
+          .status(500)
+          .json({ success: false, message: "Failed to fetch bookings" });
+      }
+    });
+
+    // -------------------------------------------------
+    // CANCEL BOOKING
+    // -------------------------------------------------
+    app.delete("/api/bookings/:id", verifyToken, async (req, res) => {
+      try {
+        const { id } = req.params;
+
+        if (!ObjectId.isValid(id)) {
+          return res
+            .status(400)
+            .json({ success: false, message: "Invalid booking ID" });
+        }
+
+        const userId = req.user?.sub || req.user?.id || req.user?.email;
+
+        const booking = await bookingsCollection.findOne({
+          _id: new ObjectId(id),
+          userId,
+        });
+
+        if (!booking) {
+          return res
+            .status(404)
+            .json({ success: false, message: "Booking not found" });
+        }
+
+        if (booking.bookStatus === "Cancelled") {
+          return res
+            .status(400)
+            .json({ success: false, message: "Booking already cancelled" });
+        }
+
+        await bookingsCollection.updateOne(
+          { _id: new ObjectId(id) },
+          { $set: { bookStatus: "Cancelled", cancelledAt: new Date() } }
+        );
+
+        if (booking.tutorId) {
+          await coursesCollection.updateOne(
+            { _id: new ObjectId(booking.tutorId) },
+            { $inc: { totalSlot: 1 } }
+          );
+        }
+
+        return res.status(200).json({
+          success: true,
+          message: "Booking cancelled successfully!",
+        });
+      } catch (error) {
+        console.error("❌ Cancel booking error:", error);
+        return res
+          .status(500)
+          .json({ success: false, message: "Failed to cancel booking" });
+      }
+    });
+
+    // Start Server
+    app.listen(port, () => {
+      console.log(`🚀 Server running on port ${port}`);
+      console.log(`🌐 http://localhost:${port}`);
+    });
+  } catch (error) {
+    console.error("❌ Database connection error:", error);
   }
 }
+
 run().catch(console.dir);
 
-app.get('/', (req, res) => {
-  res.send('Hello World!');
-});
 
-app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`);
-});
