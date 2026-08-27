@@ -766,3 +766,4 @@ app.delete("/tutors/:id", verifyToken, async (req, res) => {
 run().catch(console.dir);
 
 
+module.exports = app;
