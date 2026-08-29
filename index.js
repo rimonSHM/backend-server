@@ -1,6 +1,3 @@
-
-
-
 const express = require("express");
 const dotenv = require("dotenv");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
@@ -16,14 +13,28 @@ const app = express();
 
 const clientUrl = process.env.CLIENT_URL || "http://localhost:3000";
 
+const allowedOrigins = [
+  clientUrl,
+  "http://localhost:3000",
+  "https://assigment-9-perject.vercel.app",
+]; 
+
 app.use(
   cors({
-    origin: [clientUrl, "http://localhost:3000"],
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(null, true); // Dev-safe fallback
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
   })
 );
+
+// app.use(cors())
 
 app.use(express.json());
 
@@ -33,45 +44,65 @@ app.use(express.json());
 
 const port = process.env.PORT || 8080;
 const uri = process.env.MONGODB_URI;
-const BETTER_AUTH_URL = process.env.BETTER_AUTH_URL || "http://localhost:3000";
+const BETTER_AUTH_URL =
+  process.env.CLIENT_URL;
+
+if (!uri) {
+  console.error("❌ MONGODB_URI is not defined!");
+}
 
 // =====================================================
-// MONGODB CLIENT & CONNECTION CACHING (FOR VERCEL)
+// MONGODB CLIENT SETUP (Optimized for Vercel Serverless)
 // =====================================================
 
-let client;
-let db;
-let coursesCollection;
-let bookingsCollection;
+let cachedClient = null;
+let cachedDb = null;
 
 async function connectDB() {
-  if (db) return { db, coursesCollection, bookingsCollection };
-
-  if (!uri) {
-    throw new Error("❌ MONGODB_URI is not defined!");
+  if (cachedDb) {
+    return {
+      db: cachedDb,
+      coursesCollection: cachedDb.collection("courses"),
+      bookingsCollection: cachedDb.collection("bookings"),
+    };
   }
 
-  if (!client) {
-    client = new MongoClient(uri, {
+  if (!cachedClient) {
+    cachedClient = new MongoClient(uri, {
       serverApi: {
         version: ServerApiVersion.v1,
         strict: true,
         deprecationErrors: true,
       },
     });
-    await client.connect();
-    console.log("✅ Successfully connected to MongoDB!");
+    await cachedClient.connect();
   }
 
-  db = client.db("mentoradb");
-  coursesCollection = db.collection("courses");
-  bookingsCollection = db.collection("bookings");
+  cachedDb = cachedClient.db("mentoradb");
+  console.log("✅ Connected to MongoDB Atlas (mentoradb)");
 
-  return { db, coursesCollection, bookingsCollection };
+  return {
+    db: cachedDb,
+    coursesCollection: cachedDb.collection("courses"),
+    bookingsCollection: cachedDb.collection("bookings"),
+  };
 }
 
+// Attach DB collections to request object
+app.use(async (req, res, next) => {
+  try {
+    const { coursesCollection, bookingsCollection } = await connectDB();
+    req.coursesCollection = coursesCollection;
+    req.bookingsCollection = bookingsCollection;
+    next();
+  } catch (error) {
+    console.error("❌ DB Connection Middleware Error:", error);
+    res.status(500).json({ success: false, message: "Database connection failed" });
+  }
+});
+
 // =====================================================
-// LOGGER & DB CONNECTION MIDDLEWARE
+// LOGGER
 // =====================================================
 
 const logger = (req, res, next) => {
@@ -80,17 +111,6 @@ const logger = (req, res, next) => {
 };
 
 app.use(logger);
-
-// প্রতিটি রিকোয়েস্টের আগে DB Connection নিশ্চিত করা
-app.use(async (req, res, next) => {
-  try {
-    await connectDB();
-    next();
-  } catch (error) {
-    console.error("❌ Database connection error:", error.message);
-    res.status(500).json({ success: false, message: "Database Connection Failed" });
-  }
-});
 
 // =====================================================
 // BETTER AUTH SESSION VERIFICATION
@@ -104,8 +124,14 @@ const verifyToken = async (req, res, next) => {
     const bearerToken = authorization.startsWith("Bearer ")
       ? authorization.split(" ")[1]
       : null;
+      console.log(bearerToken )
 
-    if (!rawCookie && (!bearerToken || bearerToken === "undefined" || bearerToken === "null")) {
+    if (
+      !rawCookie &&
+      (!bearerToken ||
+        bearerToken === "undefined" ||
+        bearerToken === "null")
+    ) {
       return res.status(401).json({
         success: false,
         message: "Unauthorized: Session expired or invalid",
@@ -118,16 +144,24 @@ const verifyToken = async (req, res, next) => {
     };
 
     if (!rawCookie && bearerToken) {
-      headersToForward["cookie"] = `better-auth.session_token=${bearerToken}`;
+      // headersToForward["cookie"] = `better-auth.session_token=${bearerToken}`;
+     
+         headersToForward["cookie"] = `better-auth.session_token=${bearerToken}; __Secure-better-auth.session_token=${bearerToken}`;
     }
 
-    const authRes = await fetch(`${BETTER_AUTH_URL}/api/auth/get-session`, {
-      method: "GET",
-      headers: headersToForward,
-    });
+    const authRes = await fetch(
+      `${BETTER_AUTH_URL}/api/auth/get-session`,
+      {
+        method: "GET",
+        headers: headersToForward,
+      }
+    );
 
     if (!authRes.ok) {
-      console.error(`❌ Better Auth responded with status: ${authRes.status}`);
+      console.error(
+        `❌ Better Auth responded with status: ${authRes.status}`
+      );
+
       return res.status(401).json({
         success: false,
         message: "Unauthorized: Session expired or invalid",
@@ -154,13 +188,19 @@ const verifyToken = async (req, res, next) => {
 
     next();
   } catch (error) {
-    console.error("❌ Better Auth verification failed:", error.message);
+    console.error(
+      "❌ Better Auth verification failed:",
+      error.message
+    );
+
     return res.status(401).json({
       success: false,
       message: "Unauthorized: Session expired or invalid",
     });
   }
 };
+
+
 
 // =====================================================
 // ROUTES
@@ -173,6 +213,7 @@ app.get("/", (req, res) => {
 // -------------------------------------------------
 // ADD TUTOR
 // -------------------------------------------------
+
 app.post("/tutors", verifyToken, async (req, res) => {
   try {
     const {
@@ -223,33 +264,42 @@ app.post("/tutors", verifyToken, async (req, res) => {
       createdAt: new Date(),
     };
 
-    const result = await coursesCollection.insertOne(tutorDocument);
+    const result = await req.coursesCollection.insertOne(tutorDocument);
 
     return res.status(201).json({
       success: true,
       message: "Tutor added successfully!",
       insertedId: result.insertedId,
-      tutor: { ...tutorDocument, _id: result.insertedId },
+      tutor: {
+        ...tutorDocument,
+        _id: result.insertedId,
+      },
     });
   } catch (error) {
     console.error("❌ Add tutor error:", error);
-    return res
-      .status(500)
-      .json({ success: false, message: "Failed to add tutor" });
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to add tutor",
+    });
   }
 });
 
 // -------------------------------------------------
 // GET ALL TUTORS
 // -------------------------------------------------
+
 app.get("/tutors", async (req, res) => {
   try {
     const { searchTerm, startDate, endDate } = req.query;
-
     const query = { type: "tutor" };
 
     if (searchTerm && searchTerm.trim() !== "") {
-      const searchRegex = { $regex: searchTerm.trim(), $options: "i" };
+      const searchRegex = {
+        $regex: searchTerm.trim(),
+        $options: "i",
+      };
+
       query.$or = [
         { tutorName: searchRegex },
         { subjectCategory: searchRegex },
@@ -263,7 +313,7 @@ app.get("/tutors", async (req, res) => {
       if (endDate) query.sessionStartDate.$lte = endDate;
     }
 
-    const tutors = await coursesCollection
+    const tutors = await req.coursesCollection
       .find(query)
       .sort({ createdAt: -1 })
       .toArray();
@@ -271,75 +321,95 @@ app.get("/tutors", async (req, res) => {
     return res.status(200).json(tutors);
   } catch (error) {
     console.error("❌ Get tutors error:", error);
-    return res.status(500).json({ success: false, message: "Failed to fetch tutors" });
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch tutors",
+    });
   }
 });
 
 // -------------------------------------------------
 // GET MY TUTORS
 // -------------------------------------------------
-app.get("/my-tutors", verifyToken, async (req, res) => {
+
+app.get("/my-tutors",verifyToken, async (req, res) => {
   try {
     const userId = req.user?.sub || req.user?.id || req.user?.email;
 
-    const tutors = await coursesCollection
-      .find({ type: "tutor", userId })
+    const tutors = await req.coursesCollection
+      .find({
+        type: "tutor",
+        userId,
+      })
       .sort({ createdAt: -1 })
       .toArray();
 
-    return res.status(200).json({ success: true, tutors });
+    return res.status(200).json({
+      success: true,
+      tutors,
+    });
   } catch (error) {
     console.error("❌ Get my tutors error:", error);
-    return res
-      .status(500)
-      .json({ success: false, message: "Failed to fetch your tutors" });
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch your tutors",
+    });
   }
 });
-
+     
 // -------------------------------------------------
 // GET SINGLE TUTOR
 // -------------------------------------------------
+
 app.get("/tutors/:id", async (req, res) => {
   try {
     const { id } = req.params;
 
     if (!ObjectId.isValid(id)) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Invalid tutor ID" });
+      return res.status(400).json({
+        success: false,
+        message: "Invalid tutor ID",
+      });
     }
 
-    const tutor = await coursesCollection.findOne({
+    const tutor = await req.coursesCollection.findOne({
       _id: new ObjectId(id),
       type: "tutor",
     });
 
     if (!tutor) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Tutor not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Tutor not found",
+      });
     }
 
     return res.status(200).json(tutor);
   } catch (error) {
     console.error("❌ Get tutor error:", error);
-    return res
-      .status(500)
-      .json({ success: false, message: "Failed to fetch tutor" });
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch tutor",
+    });
   }
 });
 
 // -------------------------------------------------
 // UPDATE TUTOR
 // -------------------------------------------------
+
 app.put("/tutors/:id", verifyToken, async (req, res) => {
   try {
     const { id } = req.params;
 
     if (!ObjectId.isValid(id)) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Invalid tutor ID" });
+      return res.status(400).json({
+        success: false,
+        message: "Invalid tutor ID",
+      });
     }
 
     const userId = req.user?.sub || req.user?.id || req.user?.email;
@@ -388,9 +458,15 @@ app.put("/tutors/:id", verifyToken, async (req, res) => {
       updatedAt: new Date(),
     };
 
-    const result = await coursesCollection.updateOne(
-      { _id: new ObjectId(id), type: "tutor", userId },
-      { $set: updatedTutor }
+    const result = await req.coursesCollection.updateOne(
+      {
+        _id: new ObjectId(id),
+        type: "tutor",
+        userId,
+      },
+      {
+        $set: updatedTutor,
+      }
     );
 
     if (result.matchedCount === 0) {
@@ -400,7 +476,7 @@ app.put("/tutors/:id", verifyToken, async (req, res) => {
       });
     }
 
-    const updatedDocument = await coursesCollection.findOne({
+    const updatedDocument = await req.coursesCollection.findOne({
       _id: new ObjectId(id),
     });
 
@@ -411,6 +487,7 @@ app.put("/tutors/:id", verifyToken, async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Update tutor error:", error);
+
     return res.status(500).json({
       success: false,
       message: "Failed to update tutor",
@@ -422,6 +499,7 @@ app.put("/tutors/:id", verifyToken, async (req, res) => {
 // -------------------------------------------------
 // DELETE TUTOR
 // -------------------------------------------------
+
 app.delete("/tutors/:id", verifyToken, async (req, res) => {
   try {
     const { id } = req.params;
@@ -433,7 +511,7 @@ app.delete("/tutors/:id", verifyToken, async (req, res) => {
       });
     }
 
-    const userId = req.user.id || req.user.sub;
+    const userId = req.user.id;
 
     if (!userId) {
       return res.status(401).json({
@@ -442,7 +520,7 @@ app.delete("/tutors/:id", verifyToken, async (req, res) => {
       });
     }
 
-    const tutor = await coursesCollection.findOne({
+    const tutor = await req.coursesCollection.findOne({
       _id: new ObjectId(id),
       type: "tutor",
     });
@@ -461,7 +539,7 @@ app.delete("/tutors/:id", verifyToken, async (req, res) => {
       });
     }
 
-    const result = await coursesCollection.deleteOne({
+    const result = await req.coursesCollection.deleteOne({
       _id: new ObjectId(id),
       userId: userId,
       type: "tutor",
@@ -480,6 +558,7 @@ app.delete("/tutors/:id", verifyToken, async (req, res) => {
     });
   } catch (error) {
     console.error("❌ DELETE TUTOR ERROR:", error);
+
     return res.status(500).json({
       success: false,
       message: "Server error while deleting tutor",
@@ -490,36 +569,40 @@ app.delete("/tutors/:id", verifyToken, async (req, res) => {
 // -------------------------------------------------
 // CREATE BOOKING
 // -------------------------------------------------
+
 app.post("/api/bookings", verifyToken, async (req, res) => {
   try {
     const { tutorId, studentEmail, studentName, phone } = req.body;
 
     if (!tutorId || !ObjectId.isValid(tutorId)) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Valid Tutor ID is required" });
+      return res.status(400).json({
+        success: false,
+        message: "Valid Tutor ID is required",
+      });
     }
 
     const userId = req.user?.sub || req.user?.id || req.user?.email;
 
-    const tutor = await coursesCollection.findOne({
+    const tutor = await req.coursesCollection.findOne({
       _id: new ObjectId(tutorId),
       type: "tutor",
     });
 
     if (!tutor) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Tutor not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Tutor not found",
+      });
     }
 
     if (tutor.totalSlot === undefined || tutor.totalSlot <= 0) {
-      return res
-        .status(400)
-        .json({ success: false, message: "No available slots left." });
+      return res.status(400).json({
+        success: false,
+        message: "No available slots left.",
+      });
     }
 
-    const existingBooking = await bookingsCollection.findOne({
+    const existingBooking = await req.bookingsCollection.findOne({
       tutorId: new ObjectId(tutorId),
       userId,
       bookStatus: { $ne: "Cancelled" },
@@ -532,9 +615,14 @@ app.post("/api/bookings", verifyToken, async (req, res) => {
       });
     }
 
-    const slotUpdate = await coursesCollection.updateOne(
-      { _id: new ObjectId(tutorId), totalSlot: { $gt: 0 } },
-      { $inc: { totalSlot: -1 } }
+    const slotUpdate = await req.coursesCollection.updateOne(
+      {
+        _id: new ObjectId(tutorId),
+        totalSlot: { $gt: 0 },
+      },
+      {
+        $inc: { totalSlot: -1 },
+      }
     );
 
     if (slotUpdate.modifiedCount !== 1) {
@@ -557,14 +645,15 @@ app.post("/api/bookings", verifyToken, async (req, res) => {
     };
 
     try {
-      const result = await bookingsCollection.insertOne(bookingDoc);
+      const result = await req.bookingsCollection.insertOne(bookingDoc);
+
       return res.status(201).json({
         success: true,
         message: "Booking confirmed successfully! 🎉",
         bookingId: result.insertedId,
       });
     } catch (insertError) {
-      await coursesCollection.updateOne(
+      await req.coursesCollection.updateOne(
         { _id: new ObjectId(tutorId) },
         { $inc: { totalSlot: 1 } }
       );
@@ -572,72 +661,89 @@ app.post("/api/bookings", verifyToken, async (req, res) => {
     }
   } catch (error) {
     console.error("❌ Booking error:", error);
-    return res
-      .status(500)
-      .json({ success: false, message: "Server error" });
+
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
   }
 });
 
 // -------------------------------------------------
 // GET MY BOOKINGS
 // -------------------------------------------------
+
 app.get("/api/bookings/my-bookings", verifyToken, async (req, res) => {
   try {
     const userId = req.user?.sub || req.user?.id || req.user?.email;
 
-    const bookings = await bookingsCollection
+    const bookings = await req.bookingsCollection
       .find({ userId })
       .sort({ createdAt: -1 })
       .toArray();
 
-    return res.status(200).json({ success: true, bookings });
+    return res.status(200).json({
+      success: true,
+      bookings,
+    });
   } catch (error) {
     console.error("❌ Get bookings error:", error);
-    return res
-      .status(500)
-      .json({ success: false, message: "Failed to fetch bookings" });
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch bookings",
+    });
   }
 });
 
 // -------------------------------------------------
 // CANCEL BOOKING
 // -------------------------------------------------
+
 app.delete("/api/bookings/:id", verifyToken, async (req, res) => {
   try {
     const { id } = req.params;
 
     if (!ObjectId.isValid(id)) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Invalid booking ID" });
+      return res.status(400).json({
+        success: false,
+        message: "Invalid booking ID",
+      });
     }
 
     const userId = req.user?.sub || req.user?.id || req.user?.email;
 
-    const booking = await bookingsCollection.findOne({
+    const booking = await req.bookingsCollection.findOne({
       _id: new ObjectId(id),
       userId,
     });
 
     if (!booking) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Booking not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found",
+      });
     }
 
     if (booking.bookStatus === "Cancelled") {
-      return res
-        .status(400)
-        .json({ success: false, message: "Booking already cancelled" });
+      return res.status(400).json({
+        success: false,
+        message: "Booking already cancelled",
+      });
     }
 
-    await bookingsCollection.updateOne(
+    await req.bookingsCollection.updateOne(
       { _id: new ObjectId(id) },
-      { $set: { bookStatus: "Cancelled", cancelledAt: new Date() } }
+      {
+        $set: {
+          bookStatus: "Cancelled",
+          cancelledAt: new Date(),
+        },
+      }
     );
 
     if (booking.tutorId) {
-      await coursesCollection.updateOne(
+      await req.coursesCollection.updateOne(
         { _id: new ObjectId(booking.tutorId) },
         { $inc: { totalSlot: 1 } }
       );
@@ -649,19 +755,22 @@ app.delete("/api/bookings/:id", verifyToken, async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Cancel booking error:", error);
-    return res
-      .status(500)
-      .json({ success: false, message: "Failed to cancel booking" });
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to cancel booking",
+    });
   }
 });
 
-// =====================================================
-// SERVER START (Only in local environment)
-// =====================================================
+// Local test server
 if (process.env.NODE_ENV !== "production") {
   app.listen(port, () => {
-    console.log(`🚀 Server running locally on port ${port}`);
+    console.log(`🚀 Local Server running on port ${port}`);
   });
 }
 
 module.exports = app;
+
+
+
