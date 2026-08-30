@@ -138,53 +138,55 @@ const verifyToken = async (req, res, next) => {
       });
     }
 
-    const headersToForward = {
-      ...(rawCookie ? { cookie: rawCookie } : {}),
-      ...(authorization ? { authorization: authorization } : {}),
-    };
+    // const headersToForward = {
+    //   ...(rawCookie ? { cookie: rawCookie } : {}),
+    //   ...(authorization ? { authorization: authorization } : {}),
+    // };
 
-    if (!rawCookie && bearerToken) {
-      // headersToForward["cookie"] = `better-auth.session_token=${bearerToken}`;
+    // if (!rawCookie && bearerToken) {
+    //   // headersToForward["cookie"] = `better-auth.session_token=${bearerToken}`;
      
-         headersToForward["cookie"] = `better-auth.session_token=${bearerToken}; __Secure-better-auth.session_token=${bearerToken}`;
-    }
+    //      headersToForward["cookie"] = `better-auth.session_token=${bearerToken}; __Secure-better-auth.session_token=${bearerToken}`;
+    // }
 
-    const authRes = await fetch(
-      `${BETTER_AUTH_URL}/api/auth/get-session`,
-      {
-        method: "GET",
-        headers: headersToForward,
-      }
-    );
+    // const authRes = await fetch(
+    //   `${BETTER_AUTH_URL}/api/auth/get-session`,
+    //   {
+    //     method: "GET",
+    //     headers: headersToForward,
+    //   }
+    // );
+    // console.log(authRes)
 
-    if (!authRes.ok) {
-      console.error(
-        `❌ Better Auth responded with status: ${authRes.status}`
-      );
+    // if (!authRes.ok) {
+    //   console.error(
+    //     `❌ Better Auth responded with status: ${authRes.status}`
+    //   );
 
-      return res.status(401).json({
-        success: false,
-        message: "Unauthorized: Session expired or invalid",
-      });
-    }
+    //   return res.status(401).json({
+    //     success: false,
+    //     message: "Unauthorized: Session expired or invalid",
+    //   });
+    // }
 
-    const sessionData = await authRes.json();
-    const user = sessionData?.user || sessionData?.data?.user;
+    // const sessionData = await authRes.json();
+    // const user = sessionData?.user || sessionData?.data?.user;
 
-    if (!sessionData || !user) {
-      return res.status(401).json({
-        success: false,
-        message: "Unauthorized: Session expired or invalid",
-      });
-    }
+    // if (!sessionData || !user) {
+    //   return res.status(401).json({
+    //     success: false,
+    //     message: "Unauthorized: Session expired or invalid",
+    //   });
+    // } 
+    // console.log(user)
 
-    req.user = {
-      id: user.id || user._id,
-      sub: user.id || user._id,
-      email: user.email,
-      name: user.name,
-      role: user.role || "user",
-    };
+    // req.user = {
+    //   id: user.id || user._id,
+    //   sub: user.id || user._id,
+    //   email: user.email,
+    //   name: user.name,
+    //   role: user.role || "user",
+    // };
 
     next();
   } catch (error) {
@@ -199,6 +201,8 @@ const verifyToken = async (req, res, next) => {
     });
   }
 };
+
+
 
 
 
@@ -228,6 +232,8 @@ app.post("/tutors", verifyToken, async (req, res) => {
       experience,
       location,
       teachingMode,
+      userId,
+
     } = req.body;
 
     if (
@@ -245,7 +251,7 @@ app.post("/tutors", verifyToken, async (req, res) => {
       });
     }
 
-    const userId = req.user?.sub || req.user?.id || req.user?.email;
+    // const userId = req.user?.sub || req.user?.id || req.user?.email;
 
     const tutorDocument = {
       type: "tutor",
@@ -500,6 +506,72 @@ app.put("/tutors/:id", verifyToken, async (req, res) => {
 // DELETE TUTOR
 // -------------------------------------------------
 
+// app.delete("/tutors/:id", verifyToken, async (req, res) => {
+//   try {
+//     const { id } = req.params;
+
+//     if (!ObjectId.isValid(id)) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Invalid tutor ID",
+//       });
+//     }
+
+//     const userId = req.user.id;
+
+//     if (!userId) {
+//       return res.status(401).json({
+//         success: false,
+//         message: "User ID not found",
+//       });
+//     }
+
+//     const tutor = await req.coursesCollection.findOne({
+//       _id: new ObjectId(id),
+//       type: "tutor",
+//     });
+
+//     if (!tutor) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "Tutor not found",
+//       });
+//     }
+
+//     if (String(tutor.userId) !== String(userId)) {
+//       return res.status(403).json({
+//         success: false,
+//         message: "You are not authorized to delete this tutor",
+//       });
+//     }
+
+//     const result = await req.coursesCollection.deleteOne({
+//       _id: new ObjectId(id),
+//       userId: userId,
+//       type: "tutor",
+//     });
+
+//     if (result.deletedCount === 0) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "Tutor not found or already deleted",
+//       });
+//     }
+
+//     return res.status(200).json({
+//       success: true,
+//       message: "Tutor deleted successfully!",
+//     });
+//   } catch (error) {
+//     console.error("❌ DELETE TUTOR ERROR:", error);
+
+//     return res.status(500).json({
+//       success: false,
+//       message: "Server error while deleting tutor",
+//     });
+//   }
+// });
+
 app.delete("/tutors/:id", verifyToken, async (req, res) => {
   try {
     const { id } = req.params;
@@ -511,37 +583,9 @@ app.delete("/tutors/:id", verifyToken, async (req, res) => {
       });
     }
 
-    const userId = req.user.id;
-
-    if (!userId) {
-      return res.status(401).json({
-        success: false,
-        message: "User ID not found",
-      });
-    }
-
-    const tutor = await req.coursesCollection.findOne({
-      _id: new ObjectId(id),
-      type: "tutor",
-    });
-
-    if (!tutor) {
-      return res.status(404).json({
-        success: false,
-        message: "Tutor not found",
-      });
-    }
-
-    if (String(tutor.userId) !== String(userId)) {
-      return res.status(403).json({
-        success: false,
-        message: "You are not authorized to delete this tutor",
-      });
-    }
-
+    // সরাসরি ID দিয়ে ডিলিট
     const result = await req.coursesCollection.deleteOne({
       _id: new ObjectId(id),
-      userId: userId,
       type: "tutor",
     });
 
